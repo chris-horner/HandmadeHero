@@ -1,6 +1,7 @@
 #include<windows.h>
 #include<stdint.h>
 #include<xinput.h>
+#include<dsound.h>
 
 #define internal static
 #define local_persist static
@@ -39,7 +40,7 @@ global_variable win32_offscreen_buffer GlobalBackbuffer;
 typedef X_INPUT_GET_STATE(x_input_get_state);
 X_INPUT_GET_STATE(XInputGetStateStub)
 {
-  return 0;
+  return ERROR_DEVICE_NOT_CONNECTED;
 }
 global_variable x_input_get_state *XInputGetState_ = XInputGetStateStub;
 #define XInputGetState XInputGetState_
@@ -49,10 +50,13 @@ global_variable x_input_get_state *XInputGetState_ = XInputGetStateStub;
 typedef X_INPUT_SET_STATE(x_input_set_state);
 X_INPUT_SET_STATE(XInputSetStateStub)
 {
-  return 0;
+  return ERROR_DEVICE_NOT_CONNECTED;
 }
 global_variable x_input_set_state *XInputSetState_ = XInputSetStateStub;
 #define XInputSetState XInputSetState_
+
+#define DIRECT_SOUND_CREATE(name) HRESULT WINAPI name(LPCGUID pcGuidDevice, LPDIRECTSOUND *ppDS, LPUNKNOWN pUnkOuter)
+typedef DIRECT_SOUND_CREATE(direct_sound_create);
 
 internal void Win32LoadXInput(void)
 {
@@ -60,6 +64,7 @@ internal void Win32LoadXInput(void)
 
   if (!XInputLibrary)
   {
+    // TODO Logging
     XInputLibrary = LoadLibraryA("xinput1_3.dll");
   }
 
@@ -70,6 +75,88 @@ internal void Win32LoadXInput(void)
 
     XInputSetState = (x_input_set_state *) GetProcAddress(XInputLibrary, "XInputSetState");
     if (!XInputSetState) { XInputSetState = XInputSetStateStub; }
+  }
+  else
+  {
+    // TODO Logging
+  }
+}
+
+internal void Win32InitDSound(HWND Window, int32 SamplesPerSecond, int32 BufferSize)
+{
+  // Load the library.
+  HMODULE DSoundLibrary = LoadLibraryA("dsound.dll");
+
+  if (DSoundLibrary)
+  {
+    // Get a DirectSound object.
+    direct_sound_create *DirectSoundCreate = (direct_sound_create *) GetProcAddress(DSoundLibrary, "DirectSoundCreate");
+    LPDIRECTSOUND DirectSound;
+
+    if (DirectSoundCreate && SUCCEEDED(DirectSoundCreate(0, &DirectSound, 0)))
+    {
+      WAVEFORMATEX WaveFormat = {};
+      WaveFormat.wFormatTag = WAVE_FORMAT_PCM;
+      WaveFormat.nChannels = 2;
+      WaveFormat.wBitsPerSample = 16;
+      WaveFormat.nSamplesPerSec = SamplesPerSecond;
+      WaveFormat.nBlockAlign = (WaveFormat.nChannels * WaveFormat.wBitsPerSample) / 8;
+      WaveFormat.nAvgBytesPerSec = WaveFormat.nSamplesPerSec * WaveFormat.nBlockAlign;
+      WaveFormat.cbSize = 0;
+
+      if (SUCCEEDED(DirectSound->SetCooperativeLevel(Window, DSSCL_PRIORITY)))
+      {
+        DSBUFFERDESC BufferDescription = {};
+        BufferDescription.dwSize = sizeof(BufferDescription);
+        BufferDescription.dwFlags = DSBCAPS_PRIMARYBUFFER;
+
+        // Create a primary buffer.
+        LPDIRECTSOUNDBUFFER PrimaryBuffer;
+
+        if (SUCCEEDED(DirectSound->CreateSoundBuffer(&BufferDescription, &PrimaryBuffer, 0)))
+        {
+          if (SUCCEEDED(PrimaryBuffer->SetFormat(&WaveFormat)))
+          {
+            // We have finally set the format!
+            OutputDebugStringA("Primary buffer was set.\n");
+          }
+          else
+          {
+            // TODO Logging
+          }
+        }
+        else
+        {
+          // TODO Logging
+        }
+      }
+      else
+      {
+        // TODO Logging
+      }
+
+      // TODO DSBCAPS_GETCURRENTPOSITION2
+      // Create a secondary buffer.
+      DSBUFFERDESC BufferDescription = {};
+      BufferDescription.dwSize = sizeof(BufferDescription);
+      BufferDescription.dwFlags = 0;
+      BufferDescription.dwBufferBytes = BufferSize;
+      BufferDescription.lpwfxFormat = &WaveFormat;
+      LPDIRECTSOUNDBUFFER SecondaryBuffer;
+
+      if (SUCCEEDED(DirectSound->CreateSoundBuffer(&BufferDescription, &SecondaryBuffer, 0)))
+      {
+        OutputDebugStringA("Secondary buffer was created successfully.\n");
+      }
+    }
+    else
+    {
+      // TODO Logging
+    }
+  }
+  else
+  {
+    // TODO Logging
   }
 }
 
@@ -133,7 +220,7 @@ internal void Win32ResizeDIBSection(win32_offscreen_buffer *Buffer, int Width, i
   Buffer->Info.bmiHeader.biCompression = BI_RGB;
 
   int BitmapMemorySize = (Width * Height) * BytesPerPixel;
-  Buffer->Memory = VirtualAlloc(0, BitmapMemorySize, MEM_COMMIT, PAGE_READWRITE);
+  Buffer->Memory = VirtualAlloc(0, BitmapMemorySize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
   Buffer->Pitch = Width * BytesPerPixel;
 
   // TODO Probably want to clear this to black.
@@ -226,6 +313,10 @@ LRESULT CALLBACK Win32MainWindowCallback(
         {
         }
       }
+
+      // Handle ALT-F4
+      bool AltKeyWasDown = (LParam & (1 << 29)) != 0;
+      if (VKCode == VK_F4 && AltKeyWasDown) { GlobalRunning = false; }
     } break;
 
     case WM_PAINT:
@@ -287,6 +378,8 @@ int CALLBACK WinMain(
       int XOffset = 0;
       int YOffset = 0;
 
+      Win32InitDSound(Window, 48000, 48000 * sizeof(int16) * 2);
+
       while (GlobalRunning)
       {
         MSG Message;
@@ -310,7 +403,7 @@ int CALLBACK WinMain(
           if (XInputGetState(ControllerIndex, &ControllerState) == ERROR_SUCCESS)
           {
             // This controller is plugged in.
-            // TODO See fi ControllerState.dwPacketNumber increments too rapidly.
+            // TODO See if ControllerState.dwPacketNumber increments too rapidly.
             XINPUT_GAMEPAD *Pad = &ControllerState.Gamepad;
 
             bool Up = Pad->wButtons & XINPUT_GAMEPAD_DPAD_UP;
