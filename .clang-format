@@ -21,17 +21,17 @@ AlwaysBreakTemplateDeclarations: true
 BinPackArguments: true
 BinPackParameters: true
 BraceWrapping:
-AfterClass:      false
-AfterControlStatement: false
-AfterEnum:       false
-AfterFunction:   false
-AfterNamespace:  false
-AfterObjCDeclaration: false
-AfterStruct:     false
-AfterUnion:      false
-BeforeCatch:     false
-BeforeElse:      false
-IndentBraces:    false
+  AfterClass:      false
+  AfterControlStatement: false
+  AfterEnum:       false
+  AfterFunction:   false
+  AfterNamespace:  false
+  AfterObjCDeclaration: false
+  AfterStruct:     false
+  AfterUnion:      false
+  BeforeCatch:     false
+  BeforeElse:      false
+  IndentBraces:    false
 BreakBeforeBinaryOperators: None
 BreakBeforeBraces: Allman
 BreakBeforeTernaryOperators: true
@@ -48,14 +48,6 @@ DerivePointerAlignment: true
 DisableFormat:   false
 ExperimentalAutoDetectBinPacking: false
 ForEachMacros:   [ foreach, Q_FOREACH, BOOST_FOREACH ]
-IncludeCategories:
-- Regex:           '^<.*\.h>'
-Priority:        1
-- Regex:           '^<.*'
-Priority:        2
-- Regex:           '.*'
-Priority:        3
-IncludeIsMainRegex: '([-_](test|unittest))?$'
 IndentCaseLabels: true
 IndentWidth:     2
 IndentWrappedFunctionNames: false
