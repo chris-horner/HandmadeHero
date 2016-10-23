@@ -1,6 +1,7 @@
 #include "handmade.h"
 
-internal void GameOutputSound(game_sound_output_buffer *SoundBuffer, int ToneHz) {
+internal void GameOutputSound(game_sound_output_buffer *SoundBuffer, int ToneHz)
+{
   local_persist real32 tSine;
   int16 ToneVolume = 3000;
   int WavePeriod = SoundBuffer->SamplesPerSecond / ToneHz;
@@ -38,8 +39,31 @@ internal void RenderWeirdGradient(game_offscreen_buffer *Buffer, int BlueOffset,
   }
 }
 
-internal void GameUpdateAndRender(game_offscreen_buffer *Buffer, int BlueOffset, int GreenOffset, game_sound_output_buffer *SoundBuffer, int ToneHz)
+internal void GameUpdateAndRender(game_input *Input, game_offscreen_buffer *Buffer,
+                                  game_sound_output_buffer *SoundBuffer)
 {
+  local_persist int BlueOffset = 0;
+  local_persist int GreenOffset = 0;
+  local_persist int ToneHz = 256;
+
+  game_controller_input *Input0 = &Input->Controllers[0];
+
+  if (Input0->IsAnalog)
+  {
+    BlueOffset += (int) (4.0f * Input0->EndX);
+    ToneHz = 256 + (int) (128.0f * Input0->EndY);
+  }
+  else
+  {
+  }
+
+  // Input.AButtonEndedDown;
+  // Input.AButtonHalfTransitionCount;
+  if (Input0->Down.EndedDown)
+  {
+    GreenOffset += 1;
+  }
+
   // TODO Allow sample offsets here for more robust platform options.
   GameOutputSound(SoundBuffer, ToneHz);
   RenderWeirdGradient(Buffer, BlueOffset, GreenOffset);
