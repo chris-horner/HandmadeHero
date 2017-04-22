@@ -12,10 +12,7 @@
 
 #if HANDMADE_SLOW
 #define Assert(Expression) \
-  if (!(Expression))       \
-  {                        \
-    *(int *) 0 = 0;        \
-  }
+  if (!(Expression)) *(int *) 0 = 0;
 #else
 #define Assert(Expression)
 #endif
@@ -27,9 +24,32 @@
 
 #define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
 
+inline uint32 SafeTruncateUInt64(uint64 value)
+{
+  // TODO Defines for maximum values.
+  Assert(value <= 0xFFFFFFFF);
+  return (uint32) value;
+}
+
 /*
- * TODO Services that the platform layer provides to the game.
+ * Services that the platform layer provides to the game.
  */
+#if HANDMADE_INTERNAL
+/* IMPORTANT
+ *
+ * These are NOT for doing anything in the shipping game - they are blocking and the write
+ * doesn't protect against data loss!
+ */
+struct debug_read_file_result
+{
+  uint32 ContentsSize;
+  void *Contents;
+};
+
+internal debug_read_file_result DEBUGPlatformReadEntireFile(char *Filename);
+internal void DEBUGPlatformFreeFileMemory(void *BitmapMemory);
+internal bool32 DEBUGPlatformWriteEntireFile(char *Filename, uint32 MemorySize, void *Memory);
+#endif
 
 /*
  * Services that the game provides to the platform layer.
