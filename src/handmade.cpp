@@ -44,7 +44,8 @@ internal void RenderWeirdGradient(game_offscreen_buffer *Buffer, int BlueOffset,
   }
 }
 
-internal void GameUpdateAndRender(game_memory *Memory, game_input *Input, game_offscreen_buffer *Buffer)
+internal void GameUpdateAndRender(game_memory *Memory, game_input *Input,
+                                  game_offscreen_buffer *Buffer)
 {
   Assert(sizeof(game_state) <= Memory->PermanentStorageSize);
   game_state *GameState = (game_state *) Memory->PermanentStorage;
@@ -105,4 +106,3 @@ internal void GameGetSoundSamples(game_memory *Memory, game_sound_output_buffer 
   game_state *GameState = (game_state *) Memory->PermanentStorage;
   GameOutputSound(SoundBuffer, GameState->ToneHz);
 }
-

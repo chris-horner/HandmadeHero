@@ -42,4 +42,3 @@ struct win32_debug_time_marker
 
 #define WIN32_HANDMADE_H
 #endif
-

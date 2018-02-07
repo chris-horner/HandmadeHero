@@ -131,7 +131,8 @@ struct game_memory
   void *TransientStorage;  // NOTE: REQUIRED to be cleared to zero at startup.
 };
 
-internal void GameUpdateAndRender(game_memory *Memory, game_input *Input, game_offscreen_buffer *Buffer);
+internal void GameUpdateAndRender(game_memory *Memory, game_input *Input,
+                                  game_offscreen_buffer *Buffer);
 
 internal void GameGetSoundSamples(game_memory *Memory, game_sound_output_buffer *SoundBuffer);
 
@@ -144,4 +145,3 @@ struct game_state
 
 #define HANDMADE_H
 #endif
-
